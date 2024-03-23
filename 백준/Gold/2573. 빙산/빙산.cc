@@ -1,109 +1,158 @@
 #include <iostream>
-#include <queue>
 #include <vector>
+#include <queue>
 using namespace std;
 
 int N, M;
-vector<vector<int>> map;
-vector<vector<bool>> visited;
 
-int dx[4] = { 0, 1, 0, -1 };
-int dy[4] = { 1, 0, -1, 0 };
+// 전체 공간
+int map[301][301];
 
-void melt() {
-    vector<vector<int>> temp(N, vector<int>(M, 0));
+// 빙산이 있던 위치
+// first.first = x, first.second = y, second = 주변 0의 개수
+pair<pair<int, int>, int> pos[10001];
 
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < M; x++) {
-            if (map[y][x] != 0) {
-                int water = 0;
-                for (int i = 0; i < 4; i++) {
-                    int nx = x + dx[i], ny = y + dy[i];
-                    if (nx >= 0 && nx < M && ny >= 0 && ny < N && map[ny][nx] == 0) {
-                        water++;
-                    }
-                }
-                temp[y][x] = max(0, map[y][x] - water);
-            }
-        }
-    }
-    map = temp;
+// 빙산이 존재하는 수
+int idx = 0;
+
+int dx[4] = { 0, -1, 0, 1 };
+int dy[4] = { -1, 0, 1, 0 };
+
+// 모두 녹은 빙산이 있는지 감지
+bool detecZ = false;
+bool allZ = false;
+
+// x, y가 범위를 넘어가지 않는지 검사
+bool check(int x, int y) {
+	if (x < 0 || x >= M || y < 0 || y >= N) return false;
+	return true;
 }
 
-bool isSeparated() {
-    visited.assign(N, vector<bool>(M, false));
-    queue<pair<int, int>> q;
-    int iceberg = 0, visitedIcebergs = 0;
+// 빙산 주변의 0을 체크
+void countZ() {
+	allZ = true;
+	for (int i = 0; i < idx; i++) {
+		int x = pos[i].first.first;
+		int y = pos[i].first.second;
+		
+		// 빙산 주변 0의 개수를 0개로 초기화
+		pos[i].second = 0;
 
-    for (int y = 0; y < N && q.empty(); y++) {
-        for (int x = 0; x < M && q.empty(); x++) {
-            if (map[y][x] > 0) {
-                q.push({ x, y });
-                visited[y][x] = true;
-                break;
-            }
-        }
-    }
+		if (map[y][x] != 0) {
+			allZ = false;
+			for (int j = 0; j < 4; j++) {
+				int nx = x + dx[j];
+				int ny = y + dy[j];
 
-    while (!q.empty()) {
-        int x = q.front().first, y = q.front().second;
-        q.pop();
-        visitedIcebergs++;
+				if (check(nx, ny)) {
+					if (map[ny][nx] == 0) {
+						pos[i].second++;
+					}
+				}
+			}
+		}
+	}
+}
 
-        for (int i = 0; i < 4; i++) {
-            int nx = x + dx[i], ny = y + dy[i];
-            if (nx >= 0 && nx < M && ny >= 0 && ny < N && map[ny][nx] > 0 && !visited[ny][nx]) {
-                visited[ny][nx] = true;
-                q.push({ nx, ny });
-            }
-        }
-    }
+// 주변의 바다의 개수만큼 빙산의 높이를 감소 시키는 함수
+void minusZ() {
+	for (int i = 0; i < idx; i++) {
+		int x = pos[i].first.first;
+		int y = pos[i].first.second;
 
-    // 전체 빙산 개수 세기
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < M; x++) {
-            if (map[y][x] > 0) iceberg++;
-        }
-    }
+		if (map[y][x] != 0) {
+			map[y][x] -= pos[i].second;
 
-    // 방문한 빙산 개수와 전체 빙산 개수 비교
-    return visitedIcebergs != iceberg;
+			// 감소 후 0보다 작아졌다면 0으로 맞추고 0이 된 빙산이 있음을 감지하는 변수를 true로 설정
+			if (map[y][x] <= 0) {
+				map[y][x] = 0;
+				detecZ = true;
+			}
+		}
+	}
+}
+
+// 빙산을 bfs 하며 2번째 bfs가 실행되면 두 개의 빙산이 있을을 알림
+bool bfs() {
+	vector<vector<bool>> visited(N, vector<bool>(M, false));
+	int cnt = 0; // bfs의 횟수 누적
+
+	for (int i = 0; i < idx; i++) {
+		int x = pos[i].first.first;
+		int y = pos[i].first.second;
+
+		if (map[y][x] != 0 && !visited[y][x]) {
+			if (2 == ++cnt) return true;
+
+			queue<pair<int, int>> q;
+			q.push({ x, y });
+			visited[y][x] = true;
+
+			// bfs 시작
+			while (!q.empty()) {
+				int cx = q.front().first;
+				int cy = q.front().second;
+				q.pop();
+
+				for (int k = 0; k < 4; k++) {
+					int nx = cx + dx[k];
+					int ny = cy + dy[k];
+
+					if (check(nx, ny)) {
+						if (map[ny][nx] != 0 && !visited[ny][nx]) {
+							q.push({ nx, ny });
+							visited[ny][nx] = true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 int main() {
-    cin >> N >> M;
-    map.assign(N, vector<int>(M, 0));
+	cin.tie(nullptr);
+	ios::sync_with_stdio(false);
 
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < M; x++) {
-            cin >> map[y][x];
-        }
-    }
+	cin >> N >> M;
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < M; j++) {
+			cin >> map[i][j];
+			
+			// 빙산이 존재하는 위치만 따로 저장
+			if (map[i][j] != 0)
+				pos[idx++] = {{ j, i }, 0 };
+		}
+	}
 
-    int year = 0;
-    while (true) {
-        if (isSeparated()) {
-            cout << year << "\n";
-            break;
-        }
+	// 주변의 바다 개수 카운트
+	countZ();
 
-        melt();
-        year++;
+	int res = 0;
+	while (true) {
+		// 주변의 바다 개수만큼 높이 감소
+		minusZ();
+		res++;
 
-        bool allMelted = true;
-        for (int y = 0; y < N && allMelted; y++) {
-            for (int x = 0; x < M && allMelted; x++) {
-                if (map[y][x] > 0) {
-                    allMelted = false;
-                }
-            }
-        }
+		// 빙산을 bfs하며 두개로 분리 되었는지 확인
+		if (bfs()) {
+			cout << res << '\n';
+			break;
+		}
 
-        if (allMelted) {
-            cout << 0 << "\n";
-            break;
-        }
-    }
+		// 분리되지 않았고 빙산의 높이가 0이 된 것이 감지 되었다면 다시 빙산 주변의 바다 개수 카운트
+		if (detecZ) {
+			countZ();
+			detecZ = false;
+		}
 
-    return 0;
+		if (allZ) {
+			cout << 0 << '\n';
+			break;
+		}
+	}
+
+	return 0;
 }
