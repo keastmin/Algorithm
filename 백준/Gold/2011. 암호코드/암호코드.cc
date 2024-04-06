@@ -1,3 +1,11 @@
+/**********************************************************
+2024-04-06
+https://github.com/keastmin
+백준/2011/암호코드
+난이도: 골드5
+유형: DP(Dynamic Programming)
+**********************************************************/
+
 #include <iostream>
 #include <vector>
 #include <string>
