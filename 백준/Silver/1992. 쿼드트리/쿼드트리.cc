@@ -46,15 +46,7 @@ int main() {
 		cin >> arr[i];
 	}
 
-	char cR = Check(0, 0, N, N);
-
-	if (cR == '2') {
-		FindRes(0, 0, N, N);
-	}
-	else {
-		cout << cR << '\n';
-	}
-
+	FindRes(0, 0, N, N);
 
 	return 0;
 }
