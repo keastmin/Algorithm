@@ -1,19 +1,19 @@
-#include<iostream>
+#include <iostream>
 using namespace std;
 
+int cnt = 0;
+int N;
+
 int main() {
-	int N;
-	int count = 0;
 	cin >> N;
 
 	while ((N % 5) != 0) {
 		N -= 3;
-		count++;
+		cnt++;
 	}
-	N = N / 5;
+	N /= 5;
 
-	(N >= 0) ? cout << N + count << '\n' : cout << -1 << '\n';
-
+	(N >= 0) ? cout << N + cnt << '\n' : cout << -1 << '\n';
 
 	return 0;
 }
