@@ -3,12 +3,13 @@
 #include <string>
 using namespace std;
 
-int alp[2001][26];
+vector<vector<int>> alp;
 int q;
 string str;
 
 void Input() {
 	cin >> str;
+	alp.resize(str.length(), vector<int>(26, 0));
 	int tmp = str[0] - 'a';
 	alp[0][tmp]++;
 	for (int i = 1; i < str.length(); i++) {
